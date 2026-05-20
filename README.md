@@ -6,6 +6,9 @@ Postman collection JSON file and runs a Recon Agent over the API surface.
 - Lists endpoints
 - Shows HTTP methods
 - Identifies the declared authorization mechanism
+- Runs a confirmation-gated agent pipeline:
+  Recon, Enumeration, Static Scan, Dynamic Scan, Exploitation, Vulnerability, and
+  Reporting
 
 The demo is intentionally offline-first and non-destructive. It does not attack live
 targets, bypass authentication, exploit third-party systems, or chain real exploits.
