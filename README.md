@@ -1,14 +1,11 @@
 # Paintaster API Pentest Demo
 
-Paintaster is a local AI-assisted API security workbench demo. It imports Postman
-collection JSON or OpenAPI 3.x JSON and runs a set of simulated pentest agents over
-the API surface:
+Paintaster is a local AI-assisted API security workbench demo. Version 0.1 imports a
+Postman collection JSON file and runs a Recon Agent over the API surface.
 
-- Recon Agent
-- Auth Agent
-- Input Agent
-- State Agent
-- Chain Planner
+- Lists endpoints
+- Shows HTTP methods
+- Identifies the declared authorization mechanism
 
 The demo is intentionally offline-first and non-destructive. It does not attack live
 targets, bypass authentication, exploit third-party systems, or chain real exploits.
@@ -23,7 +20,7 @@ No install step is required.
 
 ## Try The Sample
 
-Use the built-in sample button, or import:
+Import:
 
 `samples/vulnerable-api.postman_collection.json`
 
