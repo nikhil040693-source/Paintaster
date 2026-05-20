@@ -1,289 +1,140 @@
-const { analyzeCollection, summarizeMethods } = globalThis.PaintasterAnalyzer;
+const { analyzeCollection } = globalThis.PaintasterAnalyzer;
 
-const state = {
-  report: null,
-  filter: "all",
-};
+const progressSteps = [
+  { percent: 18, label: "Reading Postman collection" },
+  { percent: 42, label: "Recon Agent is parsing folders and requests" },
+  { percent: 68, label: "Mapping endpoints and HTTP methods" },
+  { percent: 88, label: "Identifying authorization mechanisms" },
+  { percent: 100, label: "Recon complete" },
+];
 
 const elements = {
   collectionInput: document.querySelector("#collectionInput"),
-  loadSampleButton: document.querySelector("#loadSampleButton"),
-  copyReportButton: document.querySelector("#copyReportButton"),
+  fileLabel: document.querySelector("#fileLabel"),
+  progressPanel: document.querySelector("#progressPanel"),
+  progressLabel: document.querySelector("#progressLabel"),
+  progressPercent: document.querySelector("#progressPercent"),
+  progressBar: document.querySelector("#progressBar"),
+  resultsPanel: document.querySelector("#resultsPanel"),
+  collectionName: document.querySelector("#collectionName"),
+  collectionMeta: document.querySelector("#collectionMeta"),
   endpointCount: document.querySelector("#endpointCount"),
-  findingCount: document.querySelector("#findingCount"),
-  chainCount: document.querySelector("#chainCount"),
-  riskScore: document.querySelector("#riskScore"),
-  collectionType: document.querySelector("#collectionType"),
-  runState: document.querySelector("#runState"),
-  emptyState: document.querySelector("#emptyState"),
-  collectionSummary: document.querySelector("#collectionSummary"),
-  agentBoard: document.querySelector("#agentBoard"),
-  findingsList: document.querySelector("#findingsList"),
-  chainList: document.querySelector("#chainList"),
   endpointTable: document.querySelector("#endpointTable"),
-  surfaceLabel: document.querySelector("#surfaceLabel"),
-  filterButtons: [...document.querySelectorAll("[data-filter]")],
+  errorPanel: document.querySelector("#errorPanel"),
+  errorMessage: document.querySelector("#errorMessage"),
 };
-
-const defaultAgents = [
-  ["Recon Agent", "Waiting for collection surface."],
-  ["Auth Agent", "Waiting for identity boundaries."],
-  ["Input Agent", "Waiting for parameters and bodies."],
-  ["State Agent", "Waiting for write operations."],
-  ["Chain Planner", "Waiting for validation paths."],
-];
-
-renderEmpty();
 
 elements.collectionInput.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file) {
     return;
   }
-  const text = await file.text();
-  analyzeJsonText(text);
-});
 
-elements.loadSampleButton.addEventListener("click", async () => {
+  resetView(file.name);
+
   try {
-    setRunning(true);
-    analyzeCollectionObject(globalThis.PaintasterSampleCollection);
+    const text = await file.text();
+    const collection = JSON.parse(text);
+    const report = analyzeCollection(collection);
+    await runReconProgress();
+    renderEndpoints(report);
   } catch (error) {
-    renderError(error);
-  } finally {
-    setRunning(false);
+    showError(error);
   }
 });
 
-elements.copyReportButton.addEventListener("click", async () => {
-  if (!state.report) {
-    return;
-  }
-  await navigator.clipboard.writeText(JSON.stringify(state.report, null, 2));
-  elements.copyReportButton.textContent = "Copied";
-  window.setTimeout(() => {
-    elements.copyReportButton.textContent = "Copy";
-  }, 1200);
-});
+function resetView(fileName) {
+  elements.fileLabel.textContent = fileName;
+  elements.resultsPanel.classList.add("hidden");
+  elements.errorPanel.classList.add("hidden");
+  elements.progressPanel.classList.remove("hidden");
+  setProgress(0, "Starting Recon Agent");
+}
 
-elements.filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    state.filter = button.dataset.filter;
-    elements.filterButtons.forEach((item) => item.classList.toggle("active", item === button));
-    renderFindings();
-  });
-});
-
-function analyzeJsonText(text) {
-  try {
-    setRunning(true);
-    const parsed = JSON.parse(text);
-    analyzeCollectionObject(parsed);
-  } catch (error) {
-    renderError(error);
-  } finally {
-    setRunning(false);
+async function runReconProgress() {
+  for (const step of progressSteps) {
+    await wait(260);
+    setProgress(step.percent, step.label);
   }
 }
 
-function analyzeCollectionObject(collection) {
-  state.report = analyzeCollection(JSON.parse(JSON.stringify(collection)));
-  renderReport();
+function setProgress(percent, label) {
+  elements.progressBar.style.width = `${percent}%`;
+  elements.progressPercent.textContent = `${percent}%`;
+  elements.progressLabel.textContent = label;
 }
 
-function setRunning(isRunning) {
-  elements.runState.textContent = isRunning ? "Running" : state.report ? "Complete" : "Idle";
-  elements.runState.className = isRunning ? "pill warning" : "pill neutral";
+function renderEndpoints(report) {
+  const endpoints = report.endpoints;
+  elements.collectionName.textContent = report.collection.name || "API Surface";
+  elements.collectionMeta.textContent = `${report.collection.type} collection analyzed by Recon Agent`;
+  elements.endpointCount.textContent = `${endpoints.length} ${endpoints.length === 1 ? "endpoint" : "endpoints"}`;
+  elements.endpointTable.innerHTML = endpoints.length
+    ? endpoints.map(renderEndpointRow).join("")
+    : `<tr><td colspan="3">No endpoints found in this collection.</td></tr>`;
+  elements.resultsPanel.classList.remove("hidden");
 }
 
-function renderEmpty() {
-  elements.agentBoard.innerHTML = defaultAgents
-    .map(([name, body]) => {
-      return `
-        <article class="agent-card">
-          <span class="agent-name">${escapeHtml(name)}</span>
-          <span class="pill neutral agent-status">Queued</span>
-          <p>${escapeHtml(body)}</p>
-        </article>
-      `;
-    })
-    .join("");
-  elements.findingsList.innerHTML = emptyMessage("No findings yet.");
-  elements.chainList.innerHTML = emptyMessage("No chains yet.");
-  elements.endpointTable.innerHTML = tableEmptyRow("Import a collection to map the API surface.");
-}
-
-function renderReport() {
-  const report = state.report;
-  const methods = summarizeMethods(report.endpoints);
-  elements.endpointCount.textContent = report.endpoints.length;
-  elements.findingCount.textContent = report.findings.length;
-  elements.chainCount.textContent = report.chains.length;
-  elements.riskScore.textContent = report.riskScore;
-  elements.collectionType.textContent = report.collection.type;
-  elements.collectionType.className = "pill neutral";
-  elements.surfaceLabel.textContent = `${Object.keys(methods).length} methods`;
-  elements.copyReportButton.disabled = false;
-  elements.emptyState.classList.add("hidden");
-  elements.collectionSummary.classList.remove("hidden");
-  elements.collectionSummary.innerHTML = renderSummary(report, methods);
-  renderAgents();
-  renderFindings();
-  renderChains();
-  renderEndpoints();
-}
-
-function renderSummary(report, methods) {
-  const methodSummary = Object.entries(methods)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([method, count]) => `${method}:${count}`)
-    .join(" ");
-
-  return [
-    ["Name", report.collection.name],
-    ["Type", report.collection.type],
-    ["Version", report.collection.version || "n/a"],
-    ["Methods", methodSummary || "n/a"],
-    ["Generated", new Date(report.generatedAt).toLocaleString()],
-  ]
-    .map(([label, value]) => {
-      return `
-        <div class="summary-row">
-          <span>${escapeHtml(label)}</span>
-          <span>${escapeHtml(String(value))}</span>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function renderAgents() {
-  elements.agentBoard.innerHTML = state.report.agents
-    .map((agent) => {
-      const statusClass = agent.findings.length ? "warning" : "neutral";
-      return `
-        <article class="agent-card">
-          <span class="agent-name">${escapeHtml(agent.name)}</span>
-          <span class="pill ${statusClass} agent-status">${escapeHtml(agent.status)}</span>
-          <p>${escapeHtml(agent.role)}</p>
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function renderFindings() {
-  if (!state.report) {
-    return;
-  }
-
-  const findings = state.filter === "all"
-    ? state.report.findings
-    : state.report.findings.filter((finding) => finding.severity === state.filter);
-
-  if (!findings.length) {
-    elements.findingsList.innerHTML = emptyMessage("No matching findings.");
-    return;
-  }
-
-  elements.findingsList.innerHTML = findings.map(renderFinding).join("");
-}
-
-function renderFinding(finding) {
+function renderEndpointRow(endpoint) {
   return `
-    <article class="finding">
-      <div class="finding-head">
-        <h3 class="finding-title">${escapeHtml(finding.title)}</h3>
-        <span class="severity-pill severity-${escapeHtml(finding.severity)}">${escapeHtml(finding.severity)}</span>
-      </div>
-      <div class="finding-meta">
-        <span class="pill neutral">${escapeHtml(finding.agent)}</span>
-      </div>
-      <p>${escapeHtml(finding.summary)}</p>
-      <ol class="evidence-list">
-        ${finding.evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
-      </ol>
-      <p><strong>Validation:</strong> ${escapeHtml(finding.validation)}</p>
-      <p><strong>Fix:</strong> ${escapeHtml(finding.recommendation)}</p>
-    </article>
+    <tr>
+      <td><span class="method-pill method-${escapeHtml(endpoint.method.toLowerCase())}">${escapeHtml(endpoint.method)}</span></td>
+      <td class="path-cell">${escapeHtml(endpoint.path)}</td>
+      <td class="auth-cell">${escapeHtml(formatAuth(endpoint))}</td>
+    </tr>
   `;
 }
 
-function renderChains() {
-  const chains = state.report.chains;
-  if (!chains.length) {
-    elements.chainList.innerHTML = emptyMessage("No chain plan generated.");
-    return;
+function formatAuth(endpoint) {
+  const auth = String(endpoint.auth || "").toLowerCase();
+  const headers = endpoint.headers.map((header) => header.toLowerCase());
+
+  if (["none", "noauth", "no auth"].includes(auth)) {
+    return "No auth";
   }
 
-  elements.chainList.innerHTML = chains
-    .map((chain) => {
-      return `
-        <article class="chain">
-          <div class="chain-head">
-            <h3 class="chain-title">${escapeHtml(chain.title)}</h3>
-            <span class="severity-pill severity-${escapeHtml(chain.severity)}">${escapeHtml(chain.severity)}</span>
-          </div>
-          <p>${escapeHtml(chain.summary)}</p>
-          <ol class="chain-steps">
-            ${chain.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
-          </ol>
-          <div class="finding-meta">
-            ${chain.approvals.map((approval) => `<span class="pill warning">${escapeHtml(approval)}</span>`).join("")}
-          </div>
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function renderEndpoints() {
-  if (!state.report.endpoints.length) {
-    elements.endpointTable.innerHTML = tableEmptyRow("No endpoints found.");
-    return;
+  if (auth === "bearer" || headers.includes("authorization")) {
+    return "Bearer token";
   }
 
-  elements.endpointTable.innerHTML = state.report.endpoints
-    .map((endpoint) => {
-      const signalHtml = endpoint.signals.length
-        ? endpoint.signals.map((signal) => `<span class="pill neutral">${escapeHtml(signal)}</span>`).join("")
-        : `<span class="pill neutral">none</span>`;
-      return `
-        <tr>
-          <td><span class="method-pill method-${escapeHtml(endpoint.method.toLowerCase())}">${escapeHtml(endpoint.method)}</span></td>
-          <td class="path-cell">${escapeHtml(endpoint.path)}</td>
-          <td>${escapeHtml(endpoint.auth || "unspecified")}</td>
-          <td><div class="signal-list">${signalHtml}</div></td>
-        </tr>
-      `;
-    })
-    .join("");
+  if (auth === "basic") {
+    return "Basic auth";
+  }
+
+  if (auth === "apikey" || auth === "api key" || headers.includes("x-api-key")) {
+    return "API key";
+  }
+
+  if (auth === "oauth1" || auth === "oauth2") {
+    return auth.toUpperCase();
+  }
+
+  if (auth === "declared") {
+    return "Declared in spec";
+  }
+
+  if (auth === "unspecified" || !auth) {
+    return "Unspecified";
+  }
+
+  return titleCase(auth);
 }
 
-function renderError(error) {
-  state.report = null;
-  elements.endpointCount.textContent = "0";
-  elements.findingCount.textContent = "0";
-  elements.chainCount.textContent = "0";
-  elements.riskScore.textContent = "0";
-  elements.copyReportButton.disabled = true;
-  elements.collectionType.textContent = "Error";
-  elements.collectionType.className = "pill warning";
-  elements.collectionSummary.classList.add("hidden");
-  elements.emptyState.classList.remove("hidden");
-  elements.emptyState.innerHTML = `
-    <strong>Could not analyze this file.</strong>
-    <span>${escapeHtml(error.message)}</span>
-  `;
-  renderEmpty();
+function showError(error) {
+  elements.progressPanel.classList.add("hidden");
+  elements.resultsPanel.classList.add("hidden");
+  elements.errorMessage.textContent = error.message;
+  elements.errorPanel.classList.remove("hidden");
 }
 
-function emptyMessage(message) {
-  return `<div class="empty-state"><strong>${escapeHtml(message)}</strong></div>`;
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
-function tableEmptyRow(message) {
-  return `<tr><td colspan="4">${escapeHtml(message)}</td></tr>`;
+function titleCase(value) {
+  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function escapeHtml(value) {
