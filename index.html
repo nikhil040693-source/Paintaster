@@ -3,115 +3,63 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paintaster API Workbench</title>
+    <title>Paintaster v0.1</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app-shell">
-      <section class="workspace">
-        <header class="topbar">
+      <section class="intro">
+        <p class="eyebrow">Recon Agent</p>
+        <h1>Paintaster v0.1</h1>
+        <label class="upload-button" for="collectionInput">
+          Upload Postman Collection
+          <input id="collectionInput" type="file" accept="application/json,.json" />
+        </label>
+        <p id="fileLabel" class="file-label">No collection uploaded</p>
+      </section>
+
+      <section id="progressPanel" class="panel progress-panel hidden" aria-live="polite">
+        <div class="panel-heading">
           <div>
-            <p class="eyebrow">AI API Pentest Workbench</p>
-            <h1>Paintaster</h1>
+            <h2>Recon Agent</h2>
+            <p id="progressLabel">Waiting for collection</p>
           </div>
-          <div class="actions">
-            <label class="button primary" for="collectionInput">
-              Import JSON
-              <input id="collectionInput" type="file" accept="application/json,.json" />
-            </label>
-            <button id="loadSampleButton" class="button" type="button">Load Sample</button>
-            <button id="copyReportButton" class="button icon-button" type="button" disabled title="Copy report">
-              Copy
-            </button>
-          </div>
-        </header>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
 
-        <section class="status-strip" aria-live="polite">
+      <section id="resultsPanel" class="panel results-panel hidden">
+        <div class="panel-heading results-heading">
           <div>
-            <span class="metric-value" id="endpointCount">0</span>
-            <span class="metric-label">Endpoints</span>
+            <h2 id="collectionName">API Surface</h2>
+            <p id="collectionMeta">Endpoints, methods, and authorization mechanisms</p>
           </div>
-          <div>
-            <span class="metric-value" id="findingCount">0</span>
-            <span class="metric-label">Findings</span>
-          </div>
-          <div>
-            <span class="metric-value" id="chainCount">0</span>
-            <span class="metric-label">Chains</span>
-          </div>
-          <div>
-            <span class="metric-value" id="riskScore">0</span>
-            <span class="metric-label">Risk Score</span>
-          </div>
-        </section>
+          <span id="endpointCount" class="count-pill">0 endpoints</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Authorization Mechanism</th>
+              </tr>
+            </thead>
+            <tbody id="endpointTable"></tbody>
+          </table>
+        </div>
+      </section>
 
-        <section class="analysis-grid">
-          <aside class="panel import-panel">
-            <div class="panel-heading">
-              <h2>Collection</h2>
-              <span id="collectionType" class="pill neutral">None</span>
-            </div>
-            <div id="emptyState" class="empty-state">
-              <strong>Drop in Postman or OpenAPI JSON.</strong>
-              <span>Paintaster will map endpoints, surface weak paths, and build a safe validation plan.</span>
-            </div>
-            <div id="collectionSummary" class="summary-list hidden"></div>
-          </aside>
-
-          <section class="panel agent-panel">
-            <div class="panel-heading">
-              <h2>Agent Board</h2>
-              <span id="runState" class="pill neutral">Idle</span>
-            </div>
-            <div id="agentBoard" class="agent-board"></div>
-          </section>
-
-          <section class="panel findings-panel">
-            <div class="panel-heading">
-              <h2>Findings</h2>
-              <div class="segmented" role="tablist" aria-label="Finding filter">
-                <button class="segment active" data-filter="all" type="button">All</button>
-                <button class="segment" data-filter="critical" type="button">Critical</button>
-                <button class="segment" data-filter="high" type="button">High</button>
-                <button class="segment" data-filter="medium" type="button">Medium</button>
-              </div>
-            </div>
-            <div id="findingsList" class="findings-list"></div>
-          </section>
-
-          <section class="panel chain-panel">
-            <div class="panel-heading">
-              <h2>Chain Planner</h2>
-              <span class="pill warning">Human Approval Required</span>
-            </div>
-            <div id="chainList" class="chain-list"></div>
-          </section>
-
-          <section class="panel endpoints-panel">
-            <div class="panel-heading">
-              <h2>API Surface</h2>
-              <span id="surfaceLabel" class="pill neutral">Waiting</span>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Method</th>
-                    <th>Path</th>
-                    <th>Auth</th>
-                    <th>Signals</th>
-                  </tr>
-                </thead>
-                <tbody id="endpointTable"></tbody>
-              </table>
-            </div>
-          </section>
-        </section>
+      <section id="errorPanel" class="panel error-panel hidden" aria-live="assertive">
+        <h2>Could not analyze collection</h2>
+        <p id="errorMessage"></p>
       </section>
     </main>
 
     <script src="src/analyzer.js"></script>
-    <script src="src/sample-data.js"></script>
     <script src="src/app.js"></script>
   </body>
 </html>
