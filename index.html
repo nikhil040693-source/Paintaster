@@ -18,16 +18,40 @@
         <p id="fileLabel" class="file-label">No collection uploaded</p>
       </section>
 
+      <section class="panel agents-panel">
+        <div class="panel-heading results-heading">
+          <div>
+            <h2>Agent Pipeline</h2>
+            <p>Each agent pauses for confirmation before the next one starts.</p>
+          </div>
+        </div>
+        <div id="agentList" class="agent-list"></div>
+      </section>
+
       <section id="progressPanel" class="panel progress-panel hidden" aria-live="polite">
         <div class="panel-heading">
           <div>
-            <h2>Recon Agent</h2>
+            <h2 id="activeAgentName">Recon Agent</h2>
             <p id="progressLabel">Waiting for collection</p>
           </div>
           <span id="progressPercent">0%</span>
         </div>
         <div class="progress-track" aria-hidden="true">
           <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
+
+      <section id="analysisPanel" class="panel analysis-panel hidden">
+        <div class="panel-heading results-heading">
+          <div>
+            <h2 id="analysisTitle">Agent Analysis</h2>
+            <p id="analysisSummary">Analysis will appear after each agent completes.</p>
+          </div>
+        </div>
+        <div id="analysisBody" class="analysis-body"></div>
+        <div id="confirmationPanel" class="confirmation-panel hidden">
+          <p id="confirmationText"></p>
+          <button id="confirmButton" class="confirm-button" type="button">Confirm and continue</button>
         </div>
       </section>
 
