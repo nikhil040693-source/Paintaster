@@ -127,6 +127,10 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.agents-panel {
+  align-self: start;
+}
+
 .panel-heading {
   display: flex;
   align-items: flex-start;
@@ -138,6 +142,62 @@ h2 {
 .panel-heading p {
   margin-bottom: 0;
   color: var(--muted);
+}
+
+.agent-list {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 1px;
+  background: var(--line);
+}
+
+.agent-card {
+  display: grid;
+  gap: 10px;
+  min-height: 126px;
+  padding: 14px;
+  background: var(--panel);
+}
+
+.agent-name {
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.agent-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #f5efe5;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.agent-card p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.agent-card.is-running .agent-status {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.agent-card.is-complete .agent-status {
+  background: #d9ead8;
+  color: #286b3b;
+}
+
+.agent-card.is-waiting .agent-status {
+  background: #f3e1be;
+  color: var(--amber);
 }
 
 #progressPercent,
@@ -169,6 +229,65 @@ h2 {
   border-radius: inherit;
   background: linear-gradient(90deg, #116c64, #2f8f83);
   transition: width 0.24s ease;
+}
+
+.analysis-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.analysis-block {
+  display: grid;
+  gap: 8px;
+}
+
+.analysis-block h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.analysis-block ul,
+.analysis-block ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.analysis-block li {
+  line-height: 1.42;
+}
+
+.confirmation-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding: 16px 18px;
+  background: #fff9ef;
+}
+
+.confirmation-panel p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid var(--teal);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--teal);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 850;
 }
 
 .results-heading {
@@ -273,6 +392,15 @@ td {
   }
 
   .panel-heading {
+    flex-direction: column;
+  }
+
+  .agent-list {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmation-panel {
+    align-items: stretch;
     flex-direction: column;
   }
 
